@@ -48,7 +48,7 @@
 
     <script type="text/javascript">
         UnitTest = {
-            ruleIds: ["aria_semantics_role", "aria_semantics_attribute"],
+            ruleIds: ["aria_semantics_role", "aria_attribute_allowed"],
             results: [
             {
             "ruleId": "aria_semantics_role",
@@ -70,7 +70,7 @@
             "category": "Accessibility"
           },
           {
-            "ruleId": "aria_semantics_attribute",
+            "ruleId": "aria_attribute_allowed",
             "value": [
               "INFORMATION",
               "PASS"
@@ -79,8 +79,8 @@
               "dom": "/html[1]/body[1]/table[1]",
               "aria": "/document[1]/treegrid[1]"
             },
-            "reasonId": "Pass_0",
-            "message": "Rule Passed",
+            "reasonId": "Pass",
+            "message": "ARIA attributes are valid for the element and ARIA role",
             "messageArgs": [
               "aria-readonly",
               "table",
@@ -90,7 +90,7 @@
             "category": "Accessibility"
           },
           {
-            "ruleId": "aria_semantics_role",
+            "ruleId": "aria_attribute_allowed",
             "value": [
               "INFORMATION",
               "PASS"
@@ -99,27 +99,8 @@
               "dom": "/html[1]/body[1]/table[1]/tbody[1]/tr[1]",
               "aria": "/document[1]/treegrid[1]/rowgroup[1]/row[1]"
             },
-            "reasonId": "Pass_0",
-            "message": "Rule Passed",
-            "messageArgs": [
-              "row",
-              "tr"
-            ],
-            "apiArgs": [],
-            "category": "Accessibility"
-          },
-          {
-            "ruleId": "aria_semantics_attribute",
-            "value": [
-              "INFORMATION",
-              "PASS"
-            ],
-            "path": {
-              "dom": "/html[1]/body[1]/table[1]/tbody[1]/tr[1]",
-              "aria": "/document[1]/treegrid[1]/rowgroup[1]/row[1]"
-            },
-            "reasonId": "Pass_0",
-            "message": "Rule Passed",
+            "reasonId": "Pass",
+            "message": "ARIA attributes are valid for the element and ARIA role",
             "messageArgs": [
               "aria-level, aria-posinset, aria-setsize, aria-expanded",
               "tr",
@@ -129,45 +110,7 @@
             "category": "Accessibility"
           },
           {
-            "ruleId": "aria_semantics_role",
-            "value": [
-              "INFORMATION",
-              "PASS"
-            ],
-            "path": {
-              "dom": "/html[1]/body[1]/table[1]/tbody[1]/tr[1]/td[1]",
-              "aria": "/document[1]/treegrid[1]/rowgroup[1]/row[1]/gridcell[1]"
-            },
-            "reasonId": "Pass_0",
-            "message": "Rule Passed",
-            "messageArgs": [
-              "gridcell",
-              "td"
-            ],
-            "apiArgs": [],
-            "category": "Accessibility"
-          },
-          {
-            "ruleId": "aria_semantics_role",
-            "value": [
-              "INFORMATION",
-              "PASS"
-            ],
-            "path": {
-              "dom": "/html[1]/body[1]/table[1]/tbody[1]/tr[1]/td[2]",
-              "aria": "/document[1]/treegrid[1]/rowgroup[1]/row[1]/gridcell[2]"
-            },
-            "reasonId": "Pass_0",
-            "message": "Rule Passed",
-            "messageArgs": [
-              "gridcell",
-              "td"
-            ],
-            "apiArgs": [],
-            "category": "Accessibility"
-          },
-          {
-            "ruleId": "aria_semantics_role",
+            "ruleId": "aria_attribute_allowed",
             "value": [
               "INFORMATION",
               "PASS"
@@ -176,27 +119,8 @@
               "dom": "/html[1]/body[1]/table[1]/tbody[1]/tr[2]",
               "aria": "/document[1]/treegrid[1]/rowgroup[1]/row[2]"
             },
-            "reasonId": "Pass_0",
-            "message": "Rule Passed",
-            "messageArgs": [
-              "row",
-              "tr"
-            ],
-            "apiArgs": [],
-            "category": "Accessibility"
-          },
-          {
-            "ruleId": "aria_semantics_attribute",
-            "value": [
-              "INFORMATION",
-              "PASS"
-            ],
-            "path": {
-              "dom": "/html[1]/body[1]/table[1]/tbody[1]/tr[2]",
-              "aria": "/document[1]/treegrid[1]/rowgroup[1]/row[2]"
-            },
-            "reasonId": "Pass_0",
-            "message": "Rule Passed",
+            "reasonId": "Pass",
+            "message": "ARIA attributes are valid for the element and ARIA role",
             "messageArgs": [
               "aria-level, aria-posinset, aria-setsize",
               "tr",
@@ -206,45 +130,7 @@
             "category": "Accessibility"
           },
           {
-            "ruleId": "aria_semantics_role",
-            "value": [
-              "INFORMATION",
-              "PASS"
-            ],
-            "path": {
-              "dom": "/html[1]/body[1]/table[1]/tbody[1]/tr[2]/td[1]",
-              "aria": "/document[1]/treegrid[1]/rowgroup[1]/row[2]/gridcell[1]"
-            },
-            "reasonId": "Pass_0",
-            "message": "Rule Passed",
-            "messageArgs": [
-              "gridcell",
-              "td"
-            ],
-            "apiArgs": [],
-            "category": "Accessibility"
-          },
-          {
-            "ruleId": "aria_semantics_role",
-            "value": [
-              "INFORMATION",
-              "PASS"
-            ],
-            "path": {
-              "dom": "/html[1]/body[1]/table[1]/tbody[1]/tr[2]/td[2]",
-              "aria": "/document[1]/treegrid[1]/rowgroup[1]/row[2]/gridcell[2]"
-            },
-            "reasonId": "Pass_0",
-            "message": "Rule Passed",
-            "messageArgs": [
-              "gridcell",
-              "td"
-            ],
-            "apiArgs": [],
-            "category": "Accessibility"
-          },
-          {
-            "ruleId": "aria_semantics_role",
+            "ruleId": "aria_attribute_allowed",
             "value": [
               "INFORMATION",
               "PASS"
@@ -253,69 +139,12 @@
               "dom": "/html[1]/body[1]/table[1]/tbody[1]/tr[3]",
               "aria": "/document[1]/treegrid[1]/rowgroup[1]/row[3]"
             },
-            "reasonId": "Pass_0",
-            "message": "Rule Passed",
-            "messageArgs": [
-              "row",
-              "tr"
-            ],
-            "apiArgs": [],
-            "category": "Accessibility"
-          },
-          {
-            "ruleId": "aria_semantics_attribute",
-            "value": [
-              "INFORMATION",
-              "PASS"
-            ],
-            "path": {
-              "dom": "/html[1]/body[1]/table[1]/tbody[1]/tr[3]",
-              "aria": "/document[1]/treegrid[1]/rowgroup[1]/row[3]"
-            },
-            "reasonId": "Pass_0",
-            "message": "Rule Passed",
+            "reasonId": "Pass",
+            "message": "ARIA attributes are valid for the element and ARIA role",
             "messageArgs": [
               "aria-level, aria-posinset, aria-setsize, aria-expanded",
               "tr",
               "row"
-            ],
-            "apiArgs": [],
-            "category": "Accessibility"
-          },
-          {
-            "ruleId": "aria_semantics_role",
-            "value": [
-              "INFORMATION",
-              "PASS"
-            ],
-            "path": {
-              "dom": "/html[1]/body[1]/table[1]/tbody[1]/tr[3]/td[1]",
-              "aria": "/document[1]/treegrid[1]/rowgroup[1]/row[3]/gridcell[1]"
-            },
-            "reasonId": "Pass_0",
-            "message": "Rule Passed",
-            "messageArgs": [
-              "gridcell",
-              "td"
-            ],
-            "apiArgs": [],
-            "category": "Accessibility"
-          },
-          {
-            "ruleId": "aria_semantics_role",
-            "value": [
-              "INFORMATION",
-              "PASS"
-            ],
-            "path": {
-              "dom": "/html[1]/body[1]/table[1]/tbody[1]/tr[3]/td[2]",
-              "aria": "/document[1]/treegrid[1]/rowgroup[1]/row[3]/gridcell[2]"
-            },
-            "reasonId": "Pass_0",
-            "message": "Rule Passed",
-            "messageArgs": [
-              "gridcell",
-              "td"
             ],
             "apiArgs": [],
             "category": "Accessibility"

@@ -21,14 +21,7 @@ import { Config } from "../config/Config";
 import { IMapResult, IMapper } from "../api/IMapper";
 import { DOMMapper } from "../dom/DOMMapper";
 import { DOMUtil } from "../dom/DOMUtil";
-import { ARIAMapper } from "../..";
-
-export interface CacheDocument extends Document {
-    aceCache: { [key: string]: any }
-}
-export interface CacheElement extends Element {
-    aceCache: { [key: string]: any }
-}
+import { clearCaches } from "../../v4/util/CacheUtil";
 
 class WrappedRule {
     ns: string;
@@ -125,6 +118,18 @@ class WrappedRule {
 }
 
 export class Engine implements IEngine {
+    public static getLanguages() {
+        const env = typeof process !== "undefined" && typeof (process as any).nodeType === "undefined" && process.env;
+        // If all else fails, default to US English
+        let nodeLang = "en-US";
+        if (env) {
+            nodeLang = env.LANG || env.LANGUAGE || env.LC_ALL || env.LC_MESSAGES;
+            if (nodeLang) {
+                nodeLang = nodeLang.split(".")[0].replace(/_/g,"-");
+            }
+        }
+        return typeof navigator !== "undefined" && navigator.languages || [nodeLang];
+    }
     mappers : { [namespace: string] : IMapper } = {};
     ruleMap : { [id: string]: Rule } = {};
     wrappedRuleMap : { [id: string]: WrappedRule } = {};
@@ -144,15 +149,6 @@ export class Engine implements IEngine {
         this.addMapper(new DOMMapper());
     }
 
-    private static clearCaches(cacheRoot : Node) : void {
-        delete (cacheRoot.ownerDocument as CacheDocument).aceCache;
-        let nw = new DOMWalker(cacheRoot);
-        do {
-            delete (nw.node as CacheElement).aceCache;
-            nw.node.ownerDocument && delete (nw.node.ownerDocument as CacheDocument).aceCache;
-        } while (nw.nextNode());
-    }
-
     run(root: Document | Node, options?: {}): Promise<Report> {
         if (root === null) {
             return Promise.reject("null document");
@@ -161,7 +157,7 @@ export class Engine implements IEngine {
             root = (root as Document).documentElement;
         }
         root.ownerDocument && ((root.ownerDocument as any).PT_CHECK_HIDDEN_CONTENT = false);
-        Engine.clearCaches(root);
+        clearCaches(root);
         const walker = new DOMWalker(root);
         const retVal : Report = {
             results: [],
@@ -197,7 +193,7 @@ export class Engine implements IEngine {
             }
 
             if (walker.node.nodeType !== 11 
-                && (DOMUtil.isNodeVisible(walker.node)
+                && (DOMWalker.isNodeVisible(walker.node)
                     || walker.node.nodeName.toLowerCase() === "style"
                     || walker.node.nodeName.toLowerCase() === "datalist"
                     || walker.node.nodeName.toLowerCase() === "param"
@@ -242,6 +238,7 @@ export class Engine implements IEngine {
                 }
             }
         } while (walker.nextNode());
+        clearCaches(root);
         retVal.totalTime = new Date().getTime()-start;
         return Promise.resolve(retVal);
     }
@@ -273,11 +270,12 @@ export class Engine implements IEngine {
 
     addRules(rules: Rule[]) {
         for (const rule of rules) {
-            this.addRule(rule);
+            this.addRule(rule, true);
         }
+        this._sortRules();
     }
 
-    addRule(rule: Rule) {
+    addRule(rule: Rule, skipSort?: boolean) {
         let ctxs :Context[] = Context.parse(rule.context);
         let idx = 0;
         const ruleId = rule.id;
@@ -304,6 +302,36 @@ export class Engine implements IEngine {
                 this.exclRules[triggerRole] = this.exclRules[triggerRole] || [];
                 this.exclRules[triggerRole].push(wrappedRule);
             }
+        }
+        if (!skipSort) {
+            this._sortRules();
+        }
+    }
+
+    _sortRules() {
+        for (const role in this.inclRules) {
+            this.inclRules[role].sort((ruleA: WrappedRule, ruleB: WrappedRule) => {
+                const hasDepA = ruleA.rule.dependencies && ruleA.rule.dependencies.length > 0;
+                const hasDepB = ruleB.rule.dependencies && ruleB.rule.dependencies.length > 0;
+                // If B depends on A, sort A before B
+                if (hasDepB && ruleB.rule.dependencies.includes(ruleA.rule.id)) return -1;
+                // If A depends on B, sort B before A
+                if (hasDepA && ruleA.rule.dependencies.includes(ruleB.rule.id)) return 1;
+                // Otherwise, doesn't matter
+                return 0;
+            });
+        }
+        for (const role in this.exclRules) {
+            this.exclRules[role].sort((ruleA: WrappedRule, ruleB: WrappedRule) => {
+                const hasDepA = ruleA.rule.dependencies && ruleA.rule.dependencies.length > 0;
+                const hasDepB = ruleB.rule.dependencies && ruleB.rule.dependencies.length > 0;
+                // If B depends on A, sort A before B
+                if (hasDepB && ruleB.rule.dependencies.includes(ruleA.rule.id)) return -1;
+                // If A depends on B, sort B before A
+                if (hasDepA && ruleA.rule.dependencies.includes(ruleB.rule.id)) return 1;
+                // Otherwise, doesn't matter
+                return 0;
+            });
         }
     }
 
@@ -332,7 +360,15 @@ export class Engine implements IEngine {
         );
     }
 
-    getHelp(ruleId: string, ruleIdx: number | string): string {
+    getHelp(ruleId: string, reasonId: number | string, archiveId?: string): string {
+        if (!archiveId) {
+            // Set to the latest
+            archiveId = "latest";
+        }
+        return `${Config.helpRoot}/${archiveId}/doc${this.getHelpRel(ruleId, reasonId)}`;
+    }
+
+    getHelpRel(ruleId: string, ruleIdx: number | string): string {
         let splitter = ruleId.indexOf("$$");
         if (splitter >= 0) {
             ruleId = ruleId.substring(0,splitter);
@@ -354,18 +390,34 @@ export class Engine implements IEngine {
         this.mappers[mapper.getNamespace()] = mapper;
     }
 
-    private static match(ruleParts: PartInfo[],
+    private static match(rule: WrappedRule,
         contextHier: RuleContextHierarchy) : boolean
     {
+        let ruleParts = rule.parsedInfo.contextInfo;
         let partIdx = ruleParts.length-1;
-        let hierIdx = contextHier["dom"].length-1;
-        // First check the end of the hierarchy
-        if (!ruleParts[partIdx].matches(contextHier, hierIdx)) {
+        let curNS = ruleParts[partIdx].namespace;
+        let curHier = contextHier[curNS][contextHier[curNS].length-1];
+        const contextNode = curHier.node;
+
+        // If the end of the rule part doesn't match the end of the hierarchy, we don't have a match
+        if (!ruleParts[partIdx].matches(contextHier, contextHier[curNS].length-1)) {
             return false;
-        } else {
-            --partIdx;
-            --hierIdx;
         }
+        // If there was only one part, we have a match
+        if (ruleParts.length === 1) {
+            return true;
+        }
+        // Need to deal with parent parts. To walk the hierarchy, these need to be
+        // all in the same namespace. Confirm that is true.
+        curNS = ruleParts[0].namespace;
+        curHier = contextHier[curNS][contextHier[curNS].length-1];
+        --partIdx;
+        if (ruleParts.slice(0, ruleParts.length-1).some(part => part.namespace !== curNS)) {
+            console.error(`[ERROR] Rule ${rule.rule.id} has inconsitent parent namespaces`);
+            return false;
+        }
+        // If the target node matches the end of the hierarchy, move up past it, otherwise, start at the end
+        let hierIdx = contextHier[curNS].length - (curHier.node.isSameNode(contextNode) ? 2 : 1);
         while (hierIdx >= 0 && partIdx >= 0) {
             const part = ruleParts[partIdx];
             const matchesPart = ruleParts[partIdx].matches(contextHier, hierIdx);
@@ -410,7 +462,7 @@ export class Engine implements IEngine {
         let matches : WrappedRule[] = [];
         function addMatches(rules: WrappedRule[]) {
             for (const rule of rules) {
-                if (rule.rule.enabled && Engine.match(rule.parsedInfo.contextInfo, ctxHier)) {
+                if (rule.rule.enabled && Engine.match(rule, ctxHier)) {
                     if (!(rule.rule.id in dupeCheck)) {
                         matches.push(rule);
                         dupeCheck[rule.rule.id] = true;
@@ -419,7 +471,7 @@ export class Engine implements IEngine {
             }
         }
         for (const ns in ctxHier) {
-            let role = ns+":"+ctxHier[ns][ctxHier[ns].length-1].role;
+            let role = ns+":"+(ctxHier[ns].length > 0 ? ctxHier[ns][ctxHier[ns].length-1].role : "none");
             if (role in this.inclRules) {
                 addMatches(this.inclRules[role]);
             }

@@ -46,7 +46,7 @@ export class ACReporterHTML {
     scanSummary: IScanSummary
 
     constructor(config: IConfigUnsupported, scanSummary: IScanSummary) {
-        this.scanSummary = scanSummary;
+        this.scanSummary = JSON.parse(JSON.stringify(scanSummary));
         this.Config = config;
         this.Config.DEBUG && console.log("START ACReporter Constructor");
 
@@ -258,12 +258,17 @@ export class ACReporterHTML {
         }
 
         this.Config.DEBUG && console.log("Object will be written to file: \"" + fileName + "\"");
+        let passResults = content.results.filter((result: any) => {
+            return result.value[1] === "PASS";
+        })
+        let passXpaths : string[] = passResults.map((result: any) => result.path.dom);
 
         let outReport = {
             report: {
                 timestamp: content.summary.startScan,
                 nls: content.nls,
-                results: content.results,
+                results: content.results.filter((issue: any) => issue.value[1] !== "PASS"),
+                passUniqueElements: Array.from(new Set(passXpaths)),
                 counts: {
                     total: { 
                         All: 0
@@ -277,6 +282,7 @@ export class ACReporterHTML {
             let val = valueMap[item.value[0]][item.value[1]] || item.value[0] + "_" + item.value[1];
             outReport.report.counts.total[val] = (outReport.report.counts.total[val] || 0) + 1;    
             ++outReport.report.counts.total.All;
+            item.help = ACEngineManager.getHelpURL(item);
         }
 
         // Convert the Object into HTML string and write that to the file

@@ -31,6 +31,7 @@ export interface IReport {
     counts: {
         total: { [key: string]: number }
     }
+    passUniqueElements: string[]
 }
 
 export interface IReportItem {
@@ -41,7 +42,8 @@ export interface IReportItem {
     },
     value: string[],
     message: string,
-    snippet: string
+    snippet: string,
+    help: string
 }
 
 export interface ICheckpoint {
@@ -68,6 +70,12 @@ export const valueMap: { [key: string]: { [key2: string]: string } } = {
     "RECOMMENDATION": {
         "POTENTIAL": "Recommendation",
         "FAIL": "Recommendation",
+        "PASS": "Pass",
+        "MANUAL": "Recommendation"
+    },
+    "INFORMATION": {
+        "POTENTIAL": "Needs review",
+        "FAIL": "Violation",
         "PASS": "Pass",
         "MANUAL": "Recommendation"
     }

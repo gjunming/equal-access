@@ -1,7 +1,7 @@
 import { ACConfigManager } from "./ACConfigManager";
-import * as request from "request";
 import * as path from "path";
 import * as fs from "fs";
+import axios from "axios";
 
 let ace;
 
@@ -16,13 +16,23 @@ export class ACEngineManager {
             let page = content;
             await page.evaluate((scriptUrl) => {
                 try {
-                    if ('undefined' === typeof(ace)) {
+                    var ace_backup_in_ibma;
+                    if ('undefined' !== typeof(ace)) {
+                        if (!ace || !ace.Checker) 
+                            ace_backup_in_ibma = ace;
+                        ace = null; 
+                    } 
+                    if ('undefined' === typeof (ace) || ace === null) {
                         return new Promise<void>((resolve, reject) => {
                             let script = document.createElement('script');
                             script.setAttribute('type', 'text/javascript');
                             script.setAttribute('aChecker', 'ACE');
                             script.setAttribute('src', scriptUrl);
                             script.addEventListener('load', function () {
+                                globalThis.ace_ibma = ace;
+                                if ('undefined' !== typeof(ace)) {
+                                    ace = ace_backup_in_ibma;
+                                }    
                                 resolve();
                             });
                             let heads = document.getElementsByTagName('head');
@@ -44,12 +54,22 @@ export class ACEngineManager {
                 let scriptStr =
 `let cb = arguments[arguments.length - 1];
 try {
-    if ('undefined' === typeof(ace)) {
+    var ace_backup_in_ibma;
+        if ('undefined' !== typeof(ace)) {
+            if (!ace || !ace.Checker) 
+                ace_backup_in_ibma = ace;
+            ace = null; 
+        } 
+        if ('undefined' === typeof (ace) || ace === null) {
         let script = document.createElement('script');
         script.setAttribute('type', 'text/javascript');
         script.setAttribute('aChecker', 'ACE');
         script.setAttribute('src', '${config.rulePack}/ace.js');
         script.addEventListener('load', function() {
+            globalThis.ace_ibma = ace;
+            if ('undefined' !== typeof(ace)) {
+                ace = ace_backup_in_ibma;
+            } 
             cb();
         });
         let heads = document.getElementsByTagName('head');
@@ -81,7 +101,7 @@ try {
             }
         } else {
             config.DEBUG && console.log("[INFO] aChecker.loadEngine detected local");
-            if (ace) {
+            if (globalThis.ace_ibma) {
                 return Promise.resolve();
             } else {
                 return ACEngineManager.loadEngineLocal();
@@ -90,36 +110,28 @@ try {
     }
 
     static async loadEngineLocal() {
-        if (ace) {
+        if (globalThis.ace_ibma) {
             return Promise.resolve();
         }
         let config = await ACConfigManager.getConfigUnsupported();
-
-        return new Promise<void>((resolve, reject) => {
-            request.get(`${config.rulePack}/ace-node.js`, function (err, data) {
-                if (!data) {
-                    console.log("Cannot read: " + `${config.rulePack}/ace-node.js`);
+        const response = await axios.get(`${config.rulePack}/ace-node.js`);
+        const data = await response.data;
+        let engineDir = path.join(config.cacheFolder, "engine");
+        if (!fs.existsSync(engineDir)) {
+            fs.mkdirSync(engineDir, { recursive: true });
+        }
+        await new Promise<void>((resolve, reject) => {
+            const nodePath = path.join(engineDir, "ace-node")
+            fs.writeFile(nodePath+".js", data, function (err) {
+                try {
+                    err && console.log(err);
+                    var ace_ibma = require(nodePath);
+                    checker = new ace_ibma.Checker();
+                } catch (e) {
+                    console.log(e);
+                    return reject(e);
                 }
-                data = data.body;
-                let engineDir = path.join(__dirname, "engine");
-                if (!fs.existsSync(engineDir)) {
-                    fs.mkdirSync(engineDir);
-                }
-                let cacheDir = path.join(engineDir, "cache");
-                if (!fs.existsSync(cacheDir)) {
-                    fs.mkdirSync(cacheDir);
-                }
-                fs.writeFile(path.join(engineDir, "ace-node.js"), data, function (err) {
-                    try {
-                        err && console.log(err);
-                        ace = require("./engine/ace-node");
-                        checker = new ace.Checker();
-                    } catch (e) {
-                        console.log(e);
-                        return reject(e);
-                    }
-                    resolve();
-                });
+                resolve();
             });
         });
     }
@@ -160,8 +172,18 @@ try {
      *
      * @memberOf this
      */
-    static getHelpURL(ruleId) {
-        return checker.engine.getHelp(ruleId);
+    static getHelpURL(issue) {
+        let config = ACConfigManager.getConfigNow();
+        let helpUrl = checker.engine.getHelp(issue.ruleId, issue.reasonId, config.ruleArchive);
+        let minIssue = {
+            message: issue.message,
+            snippet: issue.snippet,
+            value: issue.value,
+            reasonId: issue.reasonId,
+            ruleId: issue.ruleId,
+            msgArgs: issue.msgArgs
+        };
+        return `${helpUrl}#${encodeURIComponent(JSON.stringify(minIssue))}`
     };
 
     static addRuleset = (ruleset) => {
@@ -184,5 +206,16 @@ try {
 
     static getChecker() {
         return checker;
+    }
+
+    static getRules = async function() {
+        if (!checker) {
+            await ACEngineManager.loadEngineLocal();
+        }
+        let retVal = [];
+        for (const ruleId in checker.engine.ruleMap) {
+            retVal.push(checker.engine.ruleMap[ruleId]);
+        }
+        return retVal;
     }
 }

@@ -30,6 +30,7 @@ var YAML = require('js-yaml');
 var constants = require(pathLib.join(__dirname, 'ACConstants'));
 var uuid = require('uuid');
 const request = require("request");
+const { resolve } = require('path');
 
 /**
  * This object contains all the common, variables and functions used core server side
@@ -243,6 +244,8 @@ var ACCommon = {
         config.extensions = config.extensions || constants.extensions;
         config.engineFileName = config.engineFileName || constants.engineFileName;
         config.ruleArchive = config.ruleArchive || constants.ruleArchive;
+        config.cacheFolder = config.cacheFolder ? resolve(config.cacheFolder) : constants.cacheFolder;
+
         // For check hidden content need to check for null or undefined and then set default otherwise it will evaluate the
         // boolean which causes it to always comply with the default value and not user provided option
         if (config.checkHiddenContent === null || config.checkHiddenContent === undefined || typeof config.checkHiddenContent === "undefined") {
@@ -328,8 +331,10 @@ var ACCommon = {
             var baseA11yServerURL = ACConfig.baseA11yServerURL ? ACConfig.baseA11yServerURL : constants.baseA11yServerURL;
             // depending on the rule archive selected, we will direct them to diffrent path of the archive
             let archiveJson = await new Promise((resolve, reject) => {
+                let ruleArchiveFile = `${baseA11yServerURL}${baseA11yServerURL.includes("jsdelivr.net")?"@next":""}/archives.json`;
+
                 request.get({ 
-                    url: `${baseA11yServerURL}/archives.json`, 
+                    url: ruleArchiveFile, 
                     rejectUnauthorized: false
                 }, function (error, response, body) {
                     if (error) {
@@ -339,24 +344,33 @@ var ACCommon = {
                     }
                 });
             });
-            fs.writeFileSync(pathLib.join(__dirname, "archives.json"), archiveJson);
-            var ACArchive = JSON.parse(archiveJson);
-            var ruleArchive = ACConfig.ruleArchive;
-            var ruleArchivePath = null;
-            for (var i = 0; i < ACArchive.length; i++) {
+            fs.mkdirSync(ACConfig.cacheFolder, { recursive: true});
+            fs.writeFileSync(pathLib.join(ACConfig.cacheFolder, "archives.json"), archiveJson);
+            // fs.writeFileSync(pathLib.join(ACConfig.cacheFolder, "archives.json"), archiveJson);
+            let ACArchive = JSON.parse(archiveJson);
+            let ruleArchive = ACConfig.ruleArchive;
+            let ruleArchivePath = null;
+            let ruleArchiveVersion = null;
+
+            for (let i = 0; i < ACArchive.length; i++) {
                 if (ruleArchive == ACArchive[i].id && !ACArchive[i].sunset) {
                     ruleArchivePath = ACArchive[i].path;
+                    ruleArchiveVersion = ACArchive[i].version;
                     ACConfig.ruleArchive = ACArchive[i].name + " (" + ACArchive[i].id + ")";
                     break;
                 }
             }
             // Throw error and exit if provided rule archive value doesn't match with our rule archive list
-            if (!ruleArchivePath) {
+            if (!ruleArchivePath || ruleArchiveVersion === null) {
                 ACCommon.log.error("[ERROR] RuleArchiveInvalid: Ensure correct rule archive is provided in the configuration file. More information is available in the README.md");
                 process.exit(-1);
             }
-            // Build the new rulePack based of the baseA11yServerURL, authToken and the ruleArchivePath
-            ACConfig.rulePack = `${baseA11yServerURL}${ruleArchivePath}/js`;
+            // Build the new rulePack based of the baseA11yServerURL and archive info
+            if (baseA11yServerURL.includes("jsdelivr.net")) {
+                ACConfig.rulePack = `${baseA11yServerURL}@${ruleArchiveVersion}`;
+            } else {
+                ACConfig.rulePack = `${baseA11yServerURL}${ruleArchivePath}/js`;
+            }
             ACCommon.log.debug("Built new rulePack: " + ACConfig.rulePack);
         }
 

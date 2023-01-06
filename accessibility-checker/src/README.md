@@ -119,6 +119,10 @@ outputFolder: results
 # optional - Where the baseline results should be loaded from
 # Default: baselines
 baselineFolder: test/baselines
+
+# optional - Where the tool can read/write cached files (ace-node.js / archive.json)
+# Default: `${os.tmpdir()}/accessibility-checker/`
+cacheFolder: /tmp/accessibility-checker
 ```
 
 A similar `aceconfig.js` file can also be used:
@@ -140,6 +144,7 @@ module.exports = {
     label: [process.env.TRAVIS_BRANCH],
     outputFolder: "results",
     baselineFolder: "test/baselines",
+    cacheFolder: "/tmp/accessibility-checker"
 };
 ```
 
@@ -399,3 +404,9 @@ If you are an IBM employee, feel free to provide any feedback by in the `#access
 ### Reporting bugs
 
 If you think you've found a bug, have questions or suggestions, please report the bug in [GitHub Issues](https://github.com/IBMa/equal-access/issues).
+
+## Known issues and workarounds
+
+1. If you see `TypeError: ace.Checker is not a constructor`: 
+    - Try to run your tests serially using the configuration option in your framework. For example, use `--runInBand` in Jest framework. 
+

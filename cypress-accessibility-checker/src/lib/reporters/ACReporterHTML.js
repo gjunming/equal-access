@@ -161,11 +161,17 @@ var ACReporterHTML = function (aChecker) {
 
         Config.DEBUG && console.log("Object will be written to file: \"" + fileName + "\"");
 
+        let passResults = content.results.filter((result) => {
+            return result.value[1] === "PASS";
+        })
+        let passXpaths = passResults.map(result => result.path.dom);
+
         let outReport = {
             report: {
                 timestamp: content.summary.startScan,
                 nls: content.nls,
-                results: content.results,
+                results: content.results.filter((issue) => issue.value[1] !== "PASS"),
+                passUniqueElements: Array.from(new Set(passXpaths)),
                 counts: {
                     total: { }
                 }
@@ -178,6 +184,7 @@ var ACReporterHTML = function (aChecker) {
             let val = valueMap[item.value[0]][item.value[1]] || item.value[0] + "_" + item.value[1];
             outReport.report.counts.total[val] = (outReport.report.counts.total[val] || 0) + 1;    
             ++outReport.report.counts.total.All;
+            item.help = aChecker.getHelpURL(item);
         }
 
         // Convert the Object into HTML string and write that to the file

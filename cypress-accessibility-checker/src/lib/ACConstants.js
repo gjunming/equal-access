@@ -20,6 +20,7 @@
  *******************************************************************************/
 
 // Load all the modules that are needed
+const { tmpdir } = require('os');
 var pathLib = require('path');
 
 // Used to specify all the constant
@@ -29,7 +30,7 @@ var constants = {
     policies: ["IBM_Accessibility"],
 
     // Specify the default rule pack server to use. (Where to pull the rules and engine from).
-    rulePack: "https://able.ibm.com/rules/archives/latest/js",
+    rulePack: "https://cdn.jsdelivr.net/npm/accessibility-checker-engine@latest",
 
     //Specify the rule set to be use.
     ruleArchive: "latest",
@@ -58,6 +59,9 @@ var constants = {
     // Specify default location where the baselines should be saved
     baselineFolder: "baselines",
 
+    // Default cache folder (for ace-node.js / archives.json)
+    cacheFolder: `${tmpdir()}/accessibility-checker/`,
+
     // Specify default value if Hidden content be scanned or not.
     checkHiddenContent: false,
 
@@ -82,7 +86,7 @@ var constants = {
     configFiles: [".achecker.yml", ".achecker.yaml", "achecker", "aceconfig", pathLib.join(".config", ".achecker.yml"), pathLib.join(".config", ".achecker.yaml"), pathLib.join(".config", "achecker"), pathLib.join(".config", "aceconfig")],
 
     // Specify the Base Accessibility Server URL
-    baseA11yServerURL: "https://able.ibm.com/rules",
+    baseA11yServerURL: "https://cdn.jsdelivr.net/npm/accessibility-checker-engine",
 
     // Specify true or false to allow setting rulePack with a custom server
     customRuleServer: false

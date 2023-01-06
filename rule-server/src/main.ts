@@ -68,7 +68,15 @@ export class Server {
                     res.redirect('https://' + req.headers.host + req.url);
                 }
             });
-
+            this.app.use(function(req, res, next) {
+                let change = req.url.replace(/\/tools\/help\/([^/]*).*$/, "/archives/preview/doc/en-US/$1.html");
+                if (change !== req.url) {
+                    res.redirect(change);
+                } else {
+                    next();
+                }
+            });
+             
             this.app.use("/rules", express.static(path.join(__dirname, "static"), { maxAge: Server.oneDay }));
 
             this.app.use("/rules/api", bodyParser.json({ type: 'application/json'}));
@@ -76,8 +84,14 @@ export class Server {
 
             const archives = require("./static/archives");
             let latest = "2020FebDeploy";
+            let latestVersion;
             for (const archive of archives) {
-                if (archive.latest) {
+                if (archive.id === "latest") {
+                    latestVersion = archive.version;
+                }
+            }
+            for (const archive of archives) {
+                if (archive.version === latestVersion) {
                     latest = archive.path;
                 }
             }
@@ -95,10 +109,8 @@ export class Server {
     public async run() {
         try {
 
-            // Construct the endpoint URL where the server will be hosted
-            const url = "https://" + Config.deployedHost + ":" + Config.deployedPort;
             // Check if it's local env
-            if (Server.appEnv.isLocal) {
+            if (!Config.__CLOUD__ || Config.testMode === true) {
 
                 // Check weather or not cert file exists and have read access to file, otherwise create it and use
                 fs.access(Config.certPEMPath, fs.constants.R_OK, (err) => {
@@ -114,6 +126,7 @@ export class Server {
                             days: 1,
                             selfSigned: true
                         }, (pemErr, keys) => {
+                            pemErr && console.error(pemErr);
                             // Write the generated pem and keys
                             fs.writeFileSync(Config.certPEMPath, keys.certificate);
                             fs.writeFileSync(Config.certKEYPath, keys.serviceKey);
@@ -141,8 +154,8 @@ export class Server {
                 });
                 // Production enviornment
             } else {
-                this.app.listen(Server.appEnv.port, () => {
-                    console.info("App started on: " + Server.appEnv.url);
+                this.app.listen(Config.deployedPort, () => {
+                    console.info({ app: Config.app.name, url: Config.endpoint }, "App started");
                 });
             }
         } catch (err) {

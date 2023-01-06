@@ -17,12 +17,13 @@
 import React from "react";
 
 import { IReportItem, ICheckpoint, IReport } from './Report';
-
-import HelpFileSwitcher from "../help/helpSwitcher";
+import { InlineLoading } from "@carbon/react";
+// import HelpFileSwitcher from "../help/helpSwitcher";
 
 // const Violation16 = "/assets/Violation16.png";
 
 interface IHelpState {
+    loading: boolean
 }
 
 interface IHelpProps {
@@ -32,13 +33,31 @@ interface IHelpProps {
 }
 
 export default class Help extends React.Component<IHelpProps, IHelpState> {
-    state: IHelpState = {};
+    state: IHelpState = {
+        loading: true
+    };
+
+    componentDidUpdate() {
+        var button = document.getElementById('backToListView2');
+        if (button) {
+            button.focus();
+        }
+     }
+
+    onHelpLoaded() {
+        this.setState({loading: false});
+    }
 
     render() {
-        return <div id="help" style={{height: "100%", width: "100%", padding: "0rem"}}>
-            {this.props.report && 
-                <HelpFileSwitcher report={this.props.report} item={this.props.item}/>
+        return <div id="help" style={{position: "relative", height: "100%", width: "100%", padding: "0rem"}}>
+            {this.props.report && <>
+                <iframe onLoad={this.onHelpLoaded.bind(this)} title="Accessibility Checker Help" style={{position: "absolute", width: "100%", height: "100%"}} src={this.props.item.help} />
+                {this.state.loading && 
+                    <div style={{margin: "1rem"}}><InlineLoading /></div>
+                }
+                </>
             }
+
         </div>
     }
 }

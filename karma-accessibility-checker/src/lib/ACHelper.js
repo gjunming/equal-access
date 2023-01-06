@@ -149,7 +149,7 @@ let aChecker = {
 
     aChecker.getComplianceHelper = async function (content, label) {
 
-        aChecker.DEBUG && console.log("START 'aChecker.getCompliance' function");
+        aChecker.DEBUG && console.log("START 'aChecker.getComplianceHelper' function");
 
         // Variable Decleration
         let URL;
@@ -369,6 +369,9 @@ let aChecker = {
 
                 let origReport = JSON.parse(JSON.stringify(report));
                 origReport = aChecker.buildReport(origReport, URL, label, startScan);
+                origReport.results.forEach(item => {
+                    item.help = aChecker.getHelpURL(item);
+                })
 
                 // Filter the violations based on the reporLevels
                 report = aChecker.filterViolations(report);
@@ -1543,7 +1546,7 @@ let aChecker = {
                     "\n  Level: " + issue.level +
                     "\n  XPath: " + issue.path.dom +
                     "\n  Snippet: " + issue.snippet +
-                    "\n  Help: " + aChecker.getHelpURL(issue.ruleId) +
+                    "\n  Help: " + aChecker.getHelpURL(issue) +
                     "\n";
             }
         });
@@ -1562,8 +1565,17 @@ let aChecker = {
      *
      * @memberOf this
      */
-    aChecker.getHelpURL = function (ruleId) {
-        return new ace.Checker().engine.getHelp(ruleId);
+    aChecker.getHelpURL = function (issue) {
+        let engineHelp = new ace.Checker().engine.getHelp(issue.ruleId, issue.reasonId, aChecker.Config.ruleArchive);
+        let minIssue = {
+            message: issue.message,
+            snippet: issue.snippet,
+            value: issue.value,
+            reasonId: issue.reasonId,
+            ruleId: issue.ruleId,
+            msgArgs: issue.msgArgs
+        };
+        return `${engineHelp}#${encodeURIComponent(JSON.stringify(minIssue))}`
     };
 
     aChecker.ruleIdToLegacyId = {
@@ -1619,7 +1631,6 @@ let aChecker = {
         "RPT_Text_SensoryReference": "502",
         "RPT_Embed_AutoStart": "503",
         "RPT_Style_HinderFocus1": "506",
-        "WCAG20_Elem_Lang_Valid": "507",
         "WCAG20_Img_LinkTextNotRedundant": "1000",
         "RPT_Style_ExternalStyleSheet": "1073",
         "RPT_Header_Trigger": "1002",

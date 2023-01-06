@@ -1,9 +1,14 @@
-.bx--grid {
+
+.cds--modal {
+    z-index: 9500 !important;
+}
+
+.cds--grid {
     margin: 0px;
     padding: 0px;
 }
 
-.bx--row {
+.cds--row {
     margin: 0px;
 }
 
@@ -52,7 +57,7 @@
     margin-top: 75px;
 }
 
-.baeMain .bx--tab-content {
+.baeMain .cds--tab-content {
     padding-left: 0;
     padding-right: 0;
 }
@@ -154,7 +159,6 @@
     top: 0;
     left: 0;
     width: 100%;
-    min-width: 825px; 
 }
 
 .row-counts {

@@ -1,18 +1,19 @@
 'use strict';
-import { Browser, Page, launch } from "puppeteer";
+import * as Puppeteer from "puppeteer";
+// import { Browser, Page, launch } from "puppeteer";
 import { assertCompliance, getCompliance, stringifyResults } from "accessibility-checker";
 import * as path from "path";
 import { expect } from "chai";
 import { before, after, describe, it } from "mocha";
 import { ICheckerReport } from "accessibility-checker/lib/api/IChecker";
 
-let browser: Browser;
-let page: Page;
+let browser: Puppeteer.Browser;
+let page: Puppeteer.Page;
 
 before(async () => {
     try {
-        browser = await launch();
-        page = await browser.newPage();  
+        browser = await Puppeteer.launch();
+        page = await browser.newPage();
     } catch (e) {
         console.log(e);
     }
@@ -31,15 +32,15 @@ describe("Hello World Basics", function () {
         await page.goto(`file://${sample}`);
 
         const result = await getCompliance(page, "HOME");
-        const report = result!.report as ICheckerReport;
+        const report = result!.report;
         expect(assertCompliance(report)).to.equal(0, stringifyResults(report));
-    });
+    }).timeout(10000);
 
     it("Homepage, Show Card", async() => {
         await page.click("#clickMe");
         const result = await getCompliance(page, "HOME_CARD");
-        const report = result!.report as ICheckerReport;
+        const report = result!.report;
         expect(assertCompliance(report)).to.equal(0, stringifyResults(report));
-    });
+    }).timeout(10000);
 });
 //# sourceMappingURL=basic.test.js.map
