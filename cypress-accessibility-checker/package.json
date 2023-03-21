@@ -43,6 +43,6 @@
   },
   "dependencies": {
     "deep-diff": "^1.0.2",
-    "request": "^2.88.2"
+    "@cypress/request": "^2.88.11"
   }
 }
